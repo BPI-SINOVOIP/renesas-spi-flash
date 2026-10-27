@@ -1,0 +1,211 @@
+; Copyright (C) 2024 Renesas Electronics Corp.
+;
+; ##################### Macro Parameters ############################
+
+; This is the Flash Writer S-record.
+; If this parameter is set to "", Flash Writer is not sent and is
+; expected to be already running.
+FLASH_WRITER = "Flash_Writer_SCIF_RZV2H_DEV_INTERNAL_MEMORY.mot"
+
+; COM port
+COM = 3
+
+; Directory containing binaries
+DIR = "..\bootloader\v2h\sdk8.0\"
+
+; Binary files
+BL2_FILE = "bl2_bp_emmc-bananapi-ai2h.srec"
+FIP_FILE = "fip-bananapi-ai2h.srec"
+
+; Remove user dialogs apart from errors
+; 1 to remove dialogs, 0 to keep them
+UNATTENDED = 1
+
+; Check if a COM port number was passed as a parameter; otherwise, use COM above.
+comstr='/C='
+if paramcnt>1 then
+   strconcat comstr params[2]
+else
+   int2str comport COM
+   strconcat comstr comport
+endif
+
+connect comstr
+
+testlink
+if result=0 then
+   messagebox "No COM port" "Error!"
+   disconnect 0
+   closett
+   end
+   exit
+endif
+if result=1 then
+   messagebox "Cannot connect to the COM port. Is it already open?" "Error!"
+   disconnect 0
+   closett
+   end
+   exit
+endif
+
+; Baud rate = 115200
+setbaud 115200
+
+; Get the current base path
+getdir BASE_PATH
+strconcat BASE_PATH "\"
+
+; Two images will be programmed: BL2 and FIP.
+IMAGE_NUM=2
+
+strdim PARTITION_TABLE IMAGE_NUM
+strdim SECTOR_TABLE IMAGE_NUM
+strdim FILE_NAME_TABLE IMAGE_NUM
+strdim TOP_ADDRESS_TABLE IMAGE_NUM
+
+; Both images are written to eMMC Boot Partition 1.
+PARTITION_TABLE[0] = "1"
+PARTITION_TABLE[1] = "1"
+
+; eMMC start sectors
+SECTOR_TABLE[0] = "1"
+SECTOR_TABLE[1] = "300"
+
+; RAM program start addresses
+TOP_ADDRESS_TABLE[0] = "8101E00"
+TOP_ADDRESS_TABLE[1] = "00000"
+
+; Resolve the configured image filenames in the binary directory.
+filenamebl2=DIR
+filenamefip=DIR
+
+extpatbl2=BL2_FILE
+strinsert extpatbl2 1 DIR
+extpatfip=FIP_FILE
+strinsert extpatfip 1 DIR
+
+; Find the BL2 S-record.
+findfirst dh extpatbl2 filename
+if dh=-1 then
+   messagebox "BL2 file does not exist. Copy a valid BL2 file to the binary directory." "Error!"
+   exit
+endif
+strconcat filenamebl2 filename
+
+; Check that BL2 is an S-record.
+strscan filenamebl2 ".srec"
+if result<>0 then
+   FILE_NAME_TABLE[0] = filenamebl2
+else
+   messagebox "BL2 must be an S-record file." "Error!"
+   exit
+endif
+
+; Find the FIP S-record.
+findfirst dh extpatfip filename
+if dh=-1 then
+   messagebox "FIP file does not exist. Copy a valid FIP file to the binary directory." "Error!"
+   exit
+endif
+strconcat filenamefip filename
+
+; Check that FIP is an S-record.
+strscan filenamefip ".srec"
+if result<>0 then
+   FILE_NAME_TABLE[1] = filenamefip
+else
+   messagebox "FIP must be an S-record file." "Error!"
+   exit
+endif
+
+findclose dh
+
+; ##############################################################
+; Download Flash Writer
+; ##############################################################
+
+strlen FLASH_WRITER
+if result=0 then
+   if UNATTENDED=0 then
+      messagebox "Please make sure that Flash Writer is already running " "User input needed"
+   endif
+else
+   if UNATTENDED=0 then
+      messagebox "Configure SCIF Download Mode, then power-cycle or reset the board." "User input needed"
+      waitregex "-- Load Program to SRAM ---------------"
+   endif
+   FLASH_WRITER_PATH=BASE_PATH
+   strconcat FLASH_WRITER_PATH DIR
+   strconcat FLASH_WRITER_PATH FLASH_WRITER
+   sendfile FLASH_WRITER_PATH 0
+endif
+
+setsync 1
+waitregex ">"
+
+; Program BL2 and FIP.
+for i 0 IMAGE_NUM-1
+   PARTITION=PARTITION_TABLE[i]
+   SECTOR=SECTOR_TABLE[i]
+   TOP_ADDRESS=TOP_ADDRESS_TABLE[i]
+   FILE_NAME=FILE_NAME_TABLE[i]
+   call write_emmc
+next
+
+; Configure eMMC boot operation.
+call configure_emmc_boot
+
+messagebox "Macro executed successfully" "Done!"
+
+disconnect 0
+closett
+end
+exit
+
+; ##############################################################
+; Write one S-record image with EM_W
+; ##############################################################
+
+:write_emmc
+sendln "EM_W"
+waitregex "Select area"
+
+sendln PARTITION
+waitregex "Please Input Start Address in sector"
+
+sendln SECTOR
+waitregex "Please Input Program Start Address"
+
+sendln TOP_ADDRESS
+waitregex "please send"
+
+FILE_PATH=BASE_PATH
+strconcat FILE_PATH FILE_NAME
+sendfile FILE_PATH 0
+
+waitregex "EM_W Complete!"
+waitregex ">"
+return
+
+; ##############################################################
+; Configure EXT_CSD for eMMC boot from Boot Partition 1
+; ##############################################################
+
+:configure_emmc_boot
+sendln "EM_SECSD"
+waitregex "Please Input EXT_CSD Index"
+sendln "B1"
+waitregex "Please Input Value"
+sendln "02"
+wait "EXT_CSD[B1] = 0x02"
+waitregex ">"
+
+sendln "EM_SECSD"
+waitregex "Please Input EXT_CSD Index"
+sendln "B3"
+waitregex "Please Input Value"
+sendln "08"
+wait "EXT_CSD[B3] = 0x08"
+waitregex ">"
+return
+

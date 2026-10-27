@@ -1,0 +1,8 @@
+# TOML parser: built-in on Python 3.11+; use tomli on older
+tomli ; python_version < "3.11"
+
+# Serial flashing utilities
+pyserial
+
+# Only needed for Python 3.6; 3.7+ has dataclasses in stdlib
+dataclasses ; python_version < "3.7"

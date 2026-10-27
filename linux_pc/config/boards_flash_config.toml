@@ -1,0 +1,113 @@
+####################################
+# RZ/G2L SBC board configurations
+####################################
+
+[rzg2l-sbc]
+ethernet = ["11c20000", "11c30000"]
+bl2_base = "0x12000"
+fconf_dtb_base = "0x2A000"
+# Uload bootloader
+flash_address = ["00000", "1D200", "1C700"]
+load_address = "0x48000000"
+
+# Bootloader flash SPI
+[rzg2l-sbc.xspi]
+BL2 = ["11E00", "00000"]
+FIP = ["00000", "1D200"]
+BID = ["00810", "1C700"]
+
+# Bootloader flash eMMC
+[rzg2l-sbc.emmc]
+BL2 = ["1", "1", "11E00"]
+FIP = ["1", "100", "00000", "2", "8"]
+BID = ["1", "FA", "810"]
+
+####################################
+# RZ/G2L EVK board configurations
+####################################
+
+[rzg2l-evk]
+ethernet = ["11c20000", "11c30000"]
+bl2_base = "0x12000"
+fconf_dtb_base = "0x2A000"
+# Uload bootloader
+flash_address = ["00000", "1D200", "1C700"]
+load_address = "0x48000000"
+
+# Bootloader flash SPI
+[rzg2l-evk.xspi]
+BL2 = ["11E00", "00000"]
+FIP = ["00000", "1D200"]
+BID = ["00810", "1C700"]
+
+# Bootloader flash eMMC
+[rzg2l-evk.emmc]
+BL2 = ["1", "1", "11E00"]
+FIP = ["1", "100", "00000", "2", "8"]
+BID = ["1", "FA", "810"]
+
+####################################
+# RZ/V2L EVK board configurations
+####################################
+
+[rzv2l-evk]
+ethernet = ["11c20000", "11c30000"]
+bl2_base = "0x12000"
+fconf_dtb_base = "0x2A000"
+# Uload bootloader
+flash_address = ["00000", "1D200", "1C700"]
+load_address = "0x48000000"
+
+# Bootloader flash SPI
+[rzv2l-evk.xspi]
+BL2 = ["11E00", "00000"]
+FIP = ["00000", "1D200"]
+BID = ["00810", "1C700"]
+
+# Bootloader flash eMMC
+[rzv2l-evk.emmc]
+BL2 = ["1", "1", "11E00"]
+FIP = ["1", "100", "00000", "2", "8"]
+BID = ["1", "FA", "810"]
+
+####################################
+# RZ/V2H EVK board configurations
+####################################
+
+[rzv2h-evk]
+ethernet = ["15c30000", "15c40000"]
+bl2_dest  = "0x08103000"
+bl2_base = "0x8103000"
+fconf_dtb_base = "0x08130000"
+
+# Uload bootloader
+flash_address = ["00000", "60000", "120000"]
+load_address = "0x48000000"
+
+# Bootloader flash SPI
+[rzv2h-evk.xspi]
+BL2 = ["8101E00", "00000"]
+BID = ["00810", "5F300"]
+FIP = ["00000", "60000"]
+
+# Bootloader flash eMMC
+[rzv2h-evk.emmc]
+BL2 = ["1", "1", "8101E00"]
+FIP = ["1", "300", "0", "2", "8"]
+BID = ["1", "200", "120000", "762", "762"]
+
+####################################
+# RZ/G3L EVK board configurations
+####################################
+
+[rzg3l-evk]
+
+# Bootloader flash SPI
+[rzg3l-evk.xspi]
+BL2 = ["21E00", "00000"]
+FIP = ["00000", "60000"]
+
+# Bootloader flash eMMC
+[rzg3l-evk.emmc]
+BL2 = ["1", "1", "21E00"]
+FIP = ["1", "300", "00000", "02", "08"]
